@@ -1,41 +1,41 @@
 library(tidyverse)
 
-# Load the dataset
+# Loading the dataset
 data <- read.csv('D:/2024 Spring/546/Re_ Project/fig2_modified.csv')
 
-# Define the relevant elements and check for duplicates or misalignments
+# Defining the relevant elements and check for duplicates or misalignments
 relevant_elements <- c('Na', 'S', 'Ca44','Ca43', 'Fe', 'Cu', 'Zn', 'Sr', 'B', 'Mg', 'Al', 'P', 'K', 'Mn', 'Co', 'Ni', 'As', 'Rb', 'Mo', 'Cd')
 
-# Select only the relevant columns based on the elements and key identifiers
+# Selecting only the relevant columns based on the elements and key identifiers
 data <- data %>% select(Sample, Ear, all_of(relevant_elements))
 
-# Normalize the elemental data by the mean of the ear for each element
+# Normalizing the elemental data by the mean of the ear for each element
 data_normalized <- data %>%
   group_by(Ear) %>%
   mutate(across(all_of(relevant_elements), ~ ./mean(.), .names = 'norm_{.col}')) %>%
   ungroup()
 
-# Calculate the mean for each Sample position
+# Calculating the mean for each Sample position
 data_means <- data_normalized %>%
   group_by(Sample) %>%
   summarise(across(starts_with('norm'), mean))
 
-# Reshape the data to long format for plotting with ggplot2
+# Reshaping the data to long format for plotting with ggplot2
 data_long <- pivot_longer(data_means, 
                           cols = starts_with('norm'), 
                           names_to = 'Element', 
                           values_to = 'Value',
                           names_prefix = 'norm_')
 
-# Create a mapping from sample position to a numeric value
+# Creating a mapping from sample position to a numeric value
 position_mapping <- data.frame(Sample = c('base', 'middle', 'tip'),
                                Position = c(1, 2, 3))
 
-# Join this with our long data frame
+# Joining this with  long data frame
 data_long <- data_long %>%
   left_join(position_mapping, by = 'Sample')
 
-# Define colors for specific elements and set others to gray
+# Defining colors for specific elements and set others to gray
 highlight_elements <- c('Na', 'S', 'Ca44', 'Fe', 'Cu', 'Zn', 'Sr')
 colors <- setNames(rep("gray", length(relevant_elements)), relevant_elements)
 colors[highlight_elements] <- RColorBrewer::brewer.pal(length(highlight_elements), "Set1")
@@ -54,11 +54,11 @@ p <- ggplot(data_long, aes(x = Position, y = Value, group = Element, color = Ele
         plot.caption.position = "plot", 
         panel.background = element_rect(fill = "white"), 
         plot.background = element_rect(fill = "white"))+
-theme(plot.title = element_text(hjust = 0.5),    # Center the title
-      plot.title.position = "plot")              # Position the title at the plot base
+theme(plot.title = element_text(hjust = 0.5),    
+      plot.title.position = "plot")              
 
 # Print the plot
 print(p)
 
-# Save the plot ensuring a white background and correct title position
+# Saving the plot ensuring a white background and correct title position
 ggsave("elemental_accumulation_plot_all_elements_v4.png", p, width = 12, height = 8, dpi = 300, device = 'png')
